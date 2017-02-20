@@ -233,6 +233,11 @@ public final class FileSynchronization {
 
     public static void saveStatistics(final Provider provider){
         String dir = Main.config.getWorkingDirectory()+ CMDI;
+        try {
+            FileUtils.forceMkdir(new File(dir));
+        } catch (IOException e) {
+            logger.error("Unable to create directory: " + dir);
+        }
         File file = new File(dir + Util.toFileFormat(provider.getName())+"_history.xml");
         Statistic stats = statistic.get(provider);
         StringBuffer sb = new StringBuffer();
