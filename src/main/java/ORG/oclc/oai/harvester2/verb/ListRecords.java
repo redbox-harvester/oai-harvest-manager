@@ -23,6 +23,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.file.Path;
@@ -215,10 +216,10 @@ public class ListRecords extends HarvesterVerb {
      * @return
      */
     private static String getRequestURL(String baseURL,
-            String resumptionToken) {
+            String resumptionToken) throws IOException {
         StringBuffer requestURL =  new StringBuffer(baseURL);
         requestURL.append("?verb=ListRecords");
-        requestURL.append("&resumptionToken=").append(URLEncoder.encode(resumptionToken));
+        requestURL.append("&resumptionToken=").append(URLEncoder.encode(resumptionToken, "UTF-8"));
         return requestURL.toString();
     }
 }

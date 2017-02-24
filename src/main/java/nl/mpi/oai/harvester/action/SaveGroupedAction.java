@@ -50,7 +50,7 @@ public class SaveGroupedAction extends SaveAction implements Action {
      */
     public SaveGroupedAction(OutputDirectory dir, String suffix, boolean offload, boolean history) {
 	super(dir, suffix, offload, history);
-	locations = Collections.synchronizedMap(new HashMap<>());
+	locations = Collections.synchronizedMap(new HashMap<Provider,OutputDirectory>());
     }
 
     /**
