@@ -16,27 +16,25 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-package nl.mpi.oai.harvester.control;
+package nl.mpi.oai.harvester.control
 
-import ORG.oclc.oai.harvester2.verb.ListIdentifiers;
-import nl.mpi.oai.harvester.Provider;
-import nl.mpi.oai.harvester.utils.Statistic;
-import org.apache.commons.io.FileUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.w3c.dom.NodeList;
+import ORG.oclc.oai.harvester2.verb.ListIdentifiers
+import nl.mpi.oai.harvester.Provider
+import nl.mpi.oai.harvester.utils.Statistic
+import org.apache.commons.io.FileUtils
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
+import org.w3c.dom.NodeList
 
-import javax.xml.xpath.XPathConstants;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
+import javax.xml.xpath.XPathConstants
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.text.SimpleDateFormat
+import java.util.concurrent.ConcurrentHashMap
+import java.util.stream.Stream
+
+import static nl.mpi.oai.harvester.Provider.DeletionMode.*
 
 /**
  *   Utility class used in incremental harvest process for synchronizing files
@@ -47,15 +45,15 @@ public final class FileSynchronization {
 
     private static final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
     private static final String currentDate = formatter.format(new Date());
-    private static final String CMDI = "/results/cmdi/";
-    private static final String CMDI1_1 = "/results/cmdi-1_1/";
-    private static final String CMDI1_2 = "/results/cmdi-1_2/";
+    private static final String CMDI = "/other/cmdi/";
+    private static final String CMDI1_1 = "/other/cmdi-1_1/";
+    private static final String CMDI1_2 = "/other/cmdi-1_2/";
 
     private static final ConcurrentHashMap<Provider, Statistic> statistic = new ConcurrentHashMap<>();
 
     public static void execute(Provider provider) {
 
-        switch (provider.getDeletionMode()){
+        switch (provider.getDeletionMode()) {
 
             case NO:
                 runSynchronizationForNoDeletionMode(provider);
@@ -67,16 +65,16 @@ public final class FileSynchronization {
             default:
                 break;
         }
-       saveStatistics(provider);
+        saveStatistics(provider);
     }
 
-    private static void runSynchronizationForTransientDeletionMode(final Provider provider){
-        String dir = Main.config.getWorkingDirectory()+ CMDI;
-        File file = new File(dir + Util.toFileFormat(provider.getName())+"_remove.txt");
+    private static void runSynchronizationForTransientDeletionMode(final Provider provider) {
+        String dir = Main.config.getWorkingDirectory() + CMDI;
+        File file = new File(dir + Util.toFileFormat(provider.getName()) + "_remove.txt");
 
-        String firstDirToRemove = Main.config.getWorkingDirectory() + CMDI + Util.toFileFormat(provider.getName())+"/";
-        String scenedDirToRemove = Main.config.getWorkingDirectory() + CMDI1_1 + Util.toFileFormat(provider.getName())+"/";
-        String thirdDirToRemove = Main.config.getWorkingDirectory() + CMDI1_2 + Util.toFileFormat(provider.getName())+"/";
+        String firstDirToRemove = Main.config.getWorkingDirectory() + CMDI + Util.toFileFormat(provider.getName()) + "/";
+        String scenedDirToRemove = Main.config.getWorkingDirectory() + CMDI1_1 + Util.toFileFormat(provider.getName()) + "/";
+        String thirdDirToRemove = Main.config.getWorkingDirectory() + CMDI1_2 + Util.toFileFormat(provider.getName()) + "/";
 
         delete(provider, file, firstDirToRemove);
         delete(provider, file, scenedDirToRemove);
@@ -84,7 +82,7 @@ public final class FileSynchronization {
         FileUtils.deleteQuietly(file);
     }
 
-    private static void runSynchronizationForNoDeletionMode(final Provider provider){
+    private static void runSynchronizationForNoDeletionMode(final Provider provider) {
         String dir1 = Main.config.getWorkingDirectory() + CMDI + Util.toFileFormat(provider.getName());
         String dir2 = Main.config.getWorkingDirectory() + CMDI1_2 + Util.toFileFormat(provider.getName());
         String dir3 = Main.config.getWorkingDirectory() + CMDI1_1 + Util.toFileFormat(provider.getName());
@@ -93,7 +91,8 @@ public final class FileSynchronization {
         String resumptionToken = null;
         boolean done = false;
 
-        try (FileWriter writer = new FileWriter(file, true)) {
+
+        new FileWriter(file, true).withWriter { writer ->
             int counter = 0;
             while (!done) {
                 if (counter == provider.maxRetryCount) {
@@ -118,7 +117,7 @@ public final class FileSynchronization {
 
                     resumptionToken = listIdentifiers.getResumptionToken();
 
-                    if(resumptionToken == null || resumptionToken.isEmpty()){
+                    if (resumptionToken == null || resumptionToken.isEmpty()) {
                         done = true;
                     }
                     NodeList nodeList = (NodeList) provider.xpath.evaluate(
@@ -133,12 +132,10 @@ public final class FileSynchronization {
                     }
                 } catch (Exception ex) {
                     counter++;
-                    logger.error("Error while running ListIdentifiers synchronization "+ file + ": ", ex);
+                    logger.error("Error while running ListIdentifiers synchronization " + file + ": ", ex);
                     done = false;
                 }
             }
-        } catch (IOException e) {
-            logger.error("No File "+ file + ": ", e);
         }
         move(file, dir1);
         move(file, dir2);
@@ -153,9 +150,9 @@ public final class FileSynchronization {
     /**
      *   Removes temporary directory and renames to original name
      */
-    private static void deleteDirectory(final String dir, final Provider provider){
+    private static void deleteDirectory(final String dir, final Provider provider) {
         File[] files = new File(dir).listFiles();
-        if(files != null) {
+        if (files != null) {
             for (File f : files) {
                 if (f.isFile()) {
                     Path path = Paths.get(dir + "/" + f.getName());
@@ -168,44 +165,30 @@ public final class FileSynchronization {
                 }
             }
         }
-        try {
-            Path directory = Paths.get(dir);
-            Files.delete(directory);
-            File toRename = new File(dir+"_new");
-            toRename.renameTo(new File(dir));
-        } catch (IOException e) {
-            logger.error("Unable to delete directory : ", e);
-        }
+        Path directory = Paths.get(dir);
+        Files.delete(directory);
+        File toRename = new File(dir + "_new");
+        toRename.renameTo(new File(dir));
     }
 
-    private static Stream<String> getAsStream(final File file){
-
+    private static Stream<String> getAsStream(final File file) {
         Stream<String> fileStream = null;
-
-        try{
-            fileStream = Files.lines(Paths.get(file.toURI()));
-        }catch (IOException ex){
-            logger.error("No File "+ file + ": ", ex);
-        }
+        fileStream = Files.lines(Paths.get(file.toURI()));
         return fileStream;
     }
 
     /**
      *   Move file  of temporary directory
      */
-    private static void  move(final File file, final String dir){
+    private static void move(final File file, final String dir) {
         Stream<String> fileStream = getAsStream(file);
 
-        if(fileStream != null) {
-            fileStream.forEach(l -> {
-                try {
-                    FileUtils.moveFileToDirectory(
-                            FileUtils.getFile(dir + "/" + l),
-                            FileUtils.getFile(dir + "_new/"), true);
-                } catch (IOException e) {
-                    logger.error("Error while moving "+ l + " file: ", e);
-                }
-            });
+        if (fileStream != null) {
+            fileStream.each { String l ->
+                FileUtils.moveFileToDirectory(
+                        FileUtils.getFile(dir + "/" + l),
+                        FileUtils.getFile(dir + "_new/"), true);
+            };
         }
     }
 
@@ -213,80 +196,74 @@ public final class FileSynchronization {
      *
      *   Removes files based on list provided in file
      */
-    private static void delete(final Provider provider, final File file, final String dir){
+    private static void delete(final Provider provider, final File file, final String dir) {
         Stream<String> fileStream = getAsStream(file);
 
-        if(fileStream != null) {
-            fileStream.forEach(l -> {
-                Path path = Paths.get(dir+l);
-                if(Files.exists(path)){
-                    try {
-                        Files.delete(path);
-                        saveToHistoryFile(provider, path, Operation.DELETE);
-                    } catch (IOException e) {
-                        logger.error("Error while deleting "+path + " file: ", e);
-                    }
+        if (fileStream != null) {
+            fileStream.each { l ->
+                Path path = Paths.get(dir + l);
+                if (Files.exists(path)) {
+                    Files.delete(path);
+                    saveToHistoryFile(provider, path, Operation.DELETE);
                 }
-            });
+            };
         }
     }
 
-    public static void saveStatistics(final Provider provider){
-        String dir = Main.config.getWorkingDirectory()+ CMDI;
+    public static void saveStatistics(final Provider provider) {
+        String dir = Main.config.getWorkingDirectory() + CMDI;
         try {
             FileUtils.forceMkdir(new File(dir));
         } catch (IOException e) {
             logger.error("Unable to create directory: " + dir);
         }
-        File file = new File(dir + Util.toFileFormat(provider.getName())+"_history.xml");
+        File file = new File(dir + Util.toFileFormat(provider.getName()) + "_history.xml");
         Statistic stats = statistic.get(provider);
         StringBuffer sb = new StringBuffer();
-          sb.append("<harvest date=\"").append(currentDate).append("\" ")
-             .append("operationTime=\"" + stats.getHarvestTime() + "s\" ")
-             .append("requestsToServer=\"" + stats.getRequests() + "\" ")
-             .append("collectedRecords=\"" + stats.getHarvestedRecords() + "\" ")
-             .append("/>\n");
+        sb.append("<harvest date=\"").append(currentDate).append("\" ")
+                .append("operationTime=\"" + stats.getHarvestTime() + "s\" ")
+                .append("requestsToServer=\"" + stats.getRequests() + "\" ")
+                .append("collectedRecords=\"" + stats.getHarvestedRecords() + "\" ")
+                .append("/>\n");
         writeToHistoryFile(file, sb.toString());
     }
 
-    private static void writeToHistoryFile(final File file, String toSave){
-        try(FileWriter deltaWriter = new FileWriter(file, true)) {
+    private static void writeToHistoryFile(final File file, String toSave) {
+        new FileWriter(file, true).withWriter { deltaWriter ->
             deltaWriter.write(toSave);
-        }  catch (IOException e) {
-            logger.error("Error while creating history.xml file: ", e);
         }
 
     }
 
-    public static Statistic getProviderStatistic(Provider provider){
-        return  statistic.get(provider);
+    public static Statistic getProviderStatistic(Provider provider) {
+        return statistic.get(provider);
     }
 
-    public static void addProviderStatistic(Provider provider){
+    public static void addProviderStatistic(Provider provider) {
         statistic.put(provider, new Statistic());
     }
-    public static void saveToHistoryFile(final Provider provider, final Path filePath, final Operation operation){
-        String dir = Main.config.getWorkingDirectory()+ CMDI;
-        File file = new File(dir + Util.toFileFormat(provider.getName())+"_history.xml");
-            StringBuffer sb = new StringBuffer();
-                     sb.append("<file ")
-                        .append("harvestDate=\"").append(currentDate).append("\" ")
-                        .append("name=\"").append(filePath.getFileName()).append("\" ")
-                        .append("operation=\"" + operation.name()).append("\" ")
-                        .append("/>\n");
+
+    public static void saveToHistoryFile(final Provider provider, final Path filePath, final Operation operation) {
+        String dir = Main.config.getWorkingDirectory() + CMDI;
+        File file = new File(dir + Util.toFileFormat(provider.getName()) + "_history.xml");
+        StringBuffer sb = new StringBuffer();
+        sb.append("<file ")
+                .append("harvestDate=\"").append(currentDate).append("\" ")
+                .append("name=\"").append(filePath.getFileName()).append("\" ")
+                .append("operation=\"" + operation.name()).append("\" ")
+                .append("/>\n");
         writeToHistoryFile(file, sb.toString());
     }
 
-    public static  void saveFilesToRemove(String file, Provider provider){
-        String dir = Main.config.getWorkingDirectory()+ CMDI + Util.toFileFormat(provider.getName());
-        java.io.File toRemove = new java.io.File(dir+"_remove.txt");
-        try(FileWriter writer = new FileWriter(toRemove, true)) {
+    public static void saveFilesToRemove(String file, Provider provider) {
+        String dir = Main.config.getWorkingDirectory() + CMDI + Util.toFileFormat(provider.getName());
+        java.io.File toRemove = new java.io.File(dir + "_remove.txt");
+        new FileWriter(toRemove, true).withWriter { writer ->
             writer.write(file + "\n");
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
-    public enum Operation{
+
+    public static enum Operation {
         INSERT, DELETE
     }
 }
