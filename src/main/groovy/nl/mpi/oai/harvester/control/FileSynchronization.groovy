@@ -32,7 +32,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.concurrent.ConcurrentHashMap
-import java.util.stream.Stream
 
 import static nl.mpi.oai.harvester.Provider.DeletionMode.*
 
@@ -171,22 +170,14 @@ final class FileSynchronization {
         toRename.renameTo(new File(dir))
     }
 
-    private static Stream<String> getAsStream(final File file) {
-        Files.lines(Paths.get(file.toURI()))
-    }
-
     /**
      *   Move file  of temporary directory
      */
     private static void move(final File file, final String dir) {
-        Stream<String> fileStream = getAsStream(file)
-
-        if (fileStream != null) {
-            fileStream.each { String l ->
-                FileUtils.moveFileToDirectory(
-                        FileUtils.getFile(dir + "/" + l),
-                        FileUtils.getFile(dir + "_new/"), true)
-            }
+        file.readLines().each { String l ->
+            FileUtils.moveFileToDirectory(
+                    FileUtils.getFile(dir + "/" + l),
+                    FileUtils.getFile(dir + "_new/"), true)
         }
     }
 
@@ -195,15 +186,11 @@ final class FileSynchronization {
      *   Removes files based on list provided in file
      */
     private static void delete(final Provider provider, final File file, final String dir) {
-        Stream<String> fileStream = getAsStream(file)
-
-        if (fileStream != null) {
-            fileStream.each { l ->
-                Path path = Paths.get(dir + l)
-                if (Files.exists(path)) {
-                    Files.delete(path)
-                    saveToHistoryFile(provider, path, Operation.DELETE)
-                }
+        file.readLines().each { l ->
+            Path path = Paths.get(dir + l)
+            if (Files.exists(path)) {
+                Files.delete(path)
+                saveToHistoryFile(provider, path, Operation.DELETE)
             }
         }
     }
@@ -259,4 +246,5 @@ final class FileSynchronization {
     static enum Operation {
         INSERT, DELETE
     }
+
 }

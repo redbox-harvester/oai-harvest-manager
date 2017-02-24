@@ -45,6 +45,12 @@
             </Routes>
         </Routing>
 
+        appender("CONSOLE", ConsoleAppender) {
+        encoder(PatternLayoutEncoder) {
+        pattern = "%d %-8X{name} %-6p %-20.20c{0} %m%n"
+        }
+        }
+
     </Appenders>
 
     <Loggers>

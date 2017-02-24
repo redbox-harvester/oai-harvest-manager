@@ -40,6 +40,7 @@ import javax.xml.xpath.XPathFactory;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -547,9 +548,9 @@ public class Configuration {
         if (!Files.exists(p)) {
             try {
                 String overview = "<overviewType><scenario>" + s + "</scenario></overviewType>";
-                BufferedWriter writer = Files.newBufferedWriter(p);
-                writer.write(overview, 0, overview.length());
-                writer.close();
+                try (BufferedWriter writer = Files.newBufferedWriter(p, Charset.forName("UTF-8"))) {
+                    writer.write(overview, 0, overview.length());
+                }
             } catch (IOException e) {
                 o = null;
                 logger.error("couldn't create an initial/default " + o + " file: ", e);
